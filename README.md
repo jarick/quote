@@ -1,3 +1,3 @@
 # Таблица Котировок
 
-![quote](https://fintechytech.github.io/quote/pic.png)
+![](https://fintechytech.github.io/quote/pic.png?43)

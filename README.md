@@ -60,7 +60,7 @@
 
 ### API
 
-Рекомендуется использовать публичный WebSocket API [Биржи Bitcoin.com](https://api.exchange.bitcoin.com/), этот API работает по [JSON-RPC 2](https://www.jsonrpc.org/specification).
+Рекомендуется использовать публичный WebSocket API биржи [Bitcoin.com](https://api.exchange.bitcoin.com/), этот API работает по [JSON-RPC 2](https://www.jsonrpc.org/specification).
 
 Для разработки вам потребуется метод [GetSymbols](https://api.exchange.bitcoin.com/#get-symbols) с помощью которого можно получить список пар торгующихся на бирже.
 Также вас интересуeт метод [subscribeTicker](https://api.exchange.bitcoin.com/#subscribe-to-ticker) и соответствующие сообщения-нотификации в которых уже будут

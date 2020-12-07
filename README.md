@@ -13,7 +13,7 @@
 * наименьшая цена за день - Low
 * последняя цена - Last
 
-![](https://fintechytech.github.io/quote/pic.png?43)
+![](https://fintechytech.github.io/quote/pic.png?1)
 
 
 

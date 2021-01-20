@@ -1,26 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-
-function throttle(callback, wait, immediate = false) {
-  let timeout = null 
-  let initialCall = true
-  
-  return function() {
-    const callNow = immediate && initialCall
-    const next = () => {
-      callback.apply(this, arguments)
-      timeout = null
-    }
-    
-    if (callNow) { 
-      initialCall = false
-      next()
-    }
-
-    if (!timeout) {
-      timeout = setTimeout(next, wait)
-    }
-  }
-}
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import throttle from './throttle';
 
 function getSymbolsSelector(symbols, { by }) {
   return symbols.sort((a, b) => {
@@ -28,12 +7,37 @@ function getSymbolsSelector(symbols, { by }) {
   });
 }
 
+function parseJSON(data) {
+  try {
+    data = JSON.parse(data);
+  } catch(e) {
+    console.error(e);
+    data = {};
+  }
+}
+
+const columnsMap = {
+  BID: 'bid',
+  ASK: 'ask',
+  HIGH: 'high',
+  LOW: 'low',
+  LAST: 'last',
+};
+const COLUMNS = Object.values(columnsMap);
+const API_URL = 'wss://api.exchange.bitcoin.com/api/2/ws';
+const statuses = {
+  DISCONNECTED: 'disconnected',
+  CONNECTING: 'connecting',
+  CONNECTED: 'connected',
+}
+const TIMEOUT = 1000;
+
 function App() {
-  const [status, setStatus] = useState('disconnected');
+  const [status, setStatus] = useState(statuses.DISCONNECTED);
   const [symbols, setSymbols] = useState([]);
   const [labels, setLabels] = useState({});
-  const [sort, setSort] = useState({ by: 'last' });
-  const debouncedSetSymbols = useMemo(() => throttle(setSymbols, 1000), []);
+  const [sort, setSort] = useState({ by: columnsMap.LAST });
+  const debouncedSetSymbols = useMemo(() => throttle(setSymbols, TIMEOUT), []);
   const data = useMemo(() => getSymbolsSelector(symbols, sort), [symbols, sort]);
 
   useEffect(() => {
@@ -41,17 +45,11 @@ function App() {
     let symbols = [];
 
     function connect() {
-      setStatus('connecting');
-      socket = new WebSocket("wss://api.exchange.bitcoin.com/api/2/ws");
+      setStatus(status.CONNECTING);
+      socket = new WebSocket(API_URL);
 
       socket.onmessage = function (event) {
-        let data 
-        try {
-          data = JSON.parse(event.data);
-        } catch(e) {
-          console.error(e);
-          data = {};
-        }
+        const data = parseJSON(event.data);
 
         if (data.id === 1 && Array.isArray(data.result)) {
           setLabels(data.result.reduce((acc, item) => ({ 
@@ -62,14 +60,14 @@ function App() {
           data.result.forEach(({ id }, index) => {
             socket.send(JSON.stringify({
               id: index + 2,
-              method: "subscribeTicker",
+              method: 'subscribeTicker',
               params: { symbol: id },
             }));
           });
         }
 
         if (data.method === 'ticker') {
-          const payload = ['bid', 'ask', 'high', 'low', 'last'].reduce((acc, item) => ({
+          const payload = COLUMNS.reduce((acc, item) => ({
             ...acc,
             [item]: parseFloat(data.params[item]).toFixed(2), 
           }), { id: data.params.symbol });
@@ -86,7 +84,7 @@ function App() {
       }
 
       socket.onopen = function () {
-        setStatus('connected');
+        setStatus(statuses.CONNECTED);
 
         socket.send(JSON.stringify({
           id: 1,
@@ -98,8 +96,8 @@ function App() {
       socket.onclose = function (event) {
         socket = null;
         console.error(event);
-        setStatus('disconnected');
-        setTimeout(() => connect(), 1000);
+        setStatus(statuses.DISCONNECTED);
+        setTimeout(() => connect(), TIMEOUT);
       }
 
       socket.onerror = function (event) {
@@ -120,6 +118,7 @@ function App() {
 
   const handleSort = useCallback((event) => {
     const by = event.target.getAttribute('data-by');
+
     setSort({ by });
   }, [])
 
@@ -130,7 +129,7 @@ function App() {
         <thead>
           <tr>
             <th>Ticker</th>
-            {['bid', 'ask', 'high', 'low', 'last'].map(column => (
+            {COLUMNS.map(column => (
               <th key={column} data-by={column} onClick={handleSort}>
                 {column}{sort.by === column && ' ▲'}
               </th>
@@ -141,7 +140,7 @@ function App() {
           {data.map(item => (
             <tr key={item.id}>
               <td>{labels[item.id]}</td>
-              {['bid', 'ask', 'high', 'low', 'last'].map(column => (
+              {COLUMNS.map(column => (
                 <td key={column}>{isNaN(item[column]) ? '---' : item[column]}</td>  
               ))}
             </tr>

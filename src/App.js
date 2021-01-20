@@ -9,10 +9,10 @@ function getSymbolsSelector(symbols, { by }) {
 
 function parseJSON(data) {
   try {
-    data = JSON.parse(data);
+    return JSON.parse(data);
   } catch(e) {
     console.error(e);
-    data = {};
+    return {};
   }
 }
 
@@ -45,7 +45,7 @@ function App() {
     let symbols = [];
 
     function connect() {
-      setStatus(status.CONNECTING);
+      setStatus(statuses.CONNECTING);
       socket = new WebSocket(API_URL);
 
       socket.onmessage = function (event) {
@@ -131,7 +131,7 @@ function App() {
             <th>Ticker</th>
             {COLUMNS.map(column => (
               <th key={column} data-by={column} onClick={handleSort}>
-                {column}{sort.by === column && ' ▲'}
+                {column}{sort.by === column && ' ▼'}
               </th>
             ))}
           </tr>
